@@ -1,299 +1,391 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Performance Tracker</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f4f4f4;
-    }
-    h1 {
-      text-align: center;
-    }
-    .date-toggle {
-      margin-bottom: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      align-items: center;
-    }
-    .title-options {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-    .title-options label {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-    .entry-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-      margin-bottom: 20px;
-    }
-    .entry {
-      background: white;
-      padding: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .entry label {
-      flex: 1;
-    }
-    button {
-      margin-right: 10px;
-      padding: 10px 16px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <h1>Performance Tracker</h1>
-
-  <div class="date-toggle">
-    <label>Start Date: <input type="date" id="startDate" /></label>
-    <label>End Date: <input type="date" id="endDate" /></label>
-    <div class="title-options">
-      <label><input type="radio" name="titleOption" value="responses"> Your Store, Your Say Responses</label>
-      <label><input type="radio" name="titleOption" value="sales" checked> Membership Card Sales</label>
-      <label>
-        <input type="radio" name="titleOption" value="custom">
-        <input type="text" id="customTitle" placeholder="Custom Title" disabled />
-      </label>
-    </div>
-    <label>Bar Color: <input type="color" id="barColor" value="#3c78b4" /></label>
-    <label>Bar Pattern:
-      <select id="barPattern">
-        <option value="solid">Solid</option>
-        <option value="hatched">Hatched</option>
-      </select>
-    </label>
-  </div>
-
-  <div class="entry-grid" id="entryGrid"></div>
-
-  <button onclick="generatePDF()">Generate PDF</button>
-
-  <script>
-    const presetNames = [
-      "Abigail", "Debbie", "Diane", "Elizabeth", "George",
-      "Harvey", "Jacqueline", "Jessica", "Joshua", "Laura",
-      "Nathan", "Pauline", "Samantha", "Wendi"
-    ].sort();
-
-    const entryGrid = document.getElementById("entryGrid");
-    const customTitleInput = document.getElementById("customTitle");
-    const barColorInput = document.getElementById("barColor");
-    const barPatternSelect = document.getElementById("barPattern");
-    document.querySelectorAll('input[name="titleOption"]').forEach(radio => {
-      radio.addEventListener('change', () => {
-        customTitleInput.disabled = document.querySelector('input[name="titleOption"]:checked').value !== 'custom';
-      });
-    });
-
-    function createEntry(name = "New Name", isCustom = false) {
-      const div = document.createElement("div");
-      div.className = "entry";
-
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-
-      const label = document.createElement("label");
-      label.textContent = name;
-      label.contentEditable = isCustom;
-      label.spellcheck = false;
-
-      const input = document.createElement("input");
-      input.type = "number";
-      input.value = 0;
-      input.min = 0;
-
-      div.append(checkbox, label, input);
-      entryGrid.appendChild(div);
-    }
-
-    presetNames.forEach(name => createEntry(name));
-    for (let i = 0; i < 5; i++) createEntry("New Name", true);
-
-    function formatDate(d) {
-      if (!d) return "";
-      const date = new Date(d);
-      return `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()}`;
-    }
-
-    function hexToRgb(hex) {
-      const value = hex.replace('#', '');
-      const bigint = parseInt(value, 16);
-      return [
-        (bigint >> 16) & 255,
-        (bigint >> 8) & 255,
-        bigint & 255
-      ];
-    }
-
-    async function generatePDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-
-      const entries = [], zeroes = [];
-      document.querySelectorAll(".entry").forEach(div => {
-        const checked = div.querySelector("input[type='checkbox']").checked;
-        const label = div.querySelector("label").textContent.trim();
-        const value = parseInt(div.querySelector("input[type='number']").value);
-        const isDefault = label === "New Name";
-
-        if (!checked && label && !isNaN(value) && (!isDefault || label !== "New Name")) {
-          if (value === 0) zeroes.push(label);
-          else entries.push({ name: label, value });
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Performance Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f4f4f4;
+      }
+      h1 {
+        text-align: center;
+      }
+      details.options {
+        margin-bottom: 20px;
+      }
+      details.options summary {
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .date-toggle {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+        margin-top: 10px;
+      }
+      .title-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      .title-options label {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+      .entry-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 20px;
+      }
+      .entry {
+        background: white;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .entry input[type="text"] {
+        flex: 1;
+        padding: 8px;
+      }
+      .entry input[type="number"] {
+        width: 80px;
+        padding: 8px;
+      }
+      input,
+      button {
+        font-size: 1rem;
+      }
+      button {
+        margin: 10px 0;
+        padding: 10px 16px;
+        cursor: pointer;
+      }
+      @media (max-width: 600px) {
+        body {
+          padding: 10px;
         }
-      });
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Performance Tracker</h1>
 
-      entries.sort((a, b) => b.value - a.value);
-      const maxValue = Math.max(...entries.map(e => e.value), 1);
+    <details class="options">
+      <summary>Report Options</summary>
+      <div class="date-toggle">
+        <label>Start Date: <input type="date" id="startDate" /></label>
+        <label>End Date: <input type="date" id="endDate" /></label>
+        <div class="title-options">
+          <label
+            ><input type="radio" name="titleOption" value="responses" /> Your
+            Store, Your Say Responses</label
+          >
+          <label
+            ><input type="radio" name="titleOption" value="sales" checked />
+            Membership Card Sales</label
+          >
+          <label>
+            <input type="radio" name="titleOption" value="custom" />
+            <input
+              type="text"
+              id="customTitle"
+              placeholder="Custom Title"
+              disabled
+            />
+          </label>
+        </div>
+        <label
+          >Bar Color: <input type="color" id="barColor" value="#3c78b4"
+        /></label>
+        <label
+          >Bar Pattern:
+          <select id="barPattern">
+            <option value="solid">Solid</option>
+            <option value="hatched">Hatched</option>
+          </select>
+        </label>
+      </div>
+    </details>
 
-      const titleSelection = document.querySelector('input[name="titleOption"]:checked').value;
-      let title;
-      if (titleSelection === 'responses') title = "Your Store, Your Say Responses";
-      else if (titleSelection === 'sales') title = "Membership Card Sales";
-      else title = customTitleInput.value.trim() || "Custom Title";
-      const start = formatDate(document.getElementById("startDate").value);
-      const end = formatDate(document.getElementById("endDate").value);
-      const subtitle = start && end ? `from ${start} to ${end}` : "";
-      const barColor = barColorInput.value;
-      const barPattern = barPatternSelect.value;
+    <div class="entry-grid" id="entryGrid"></div>
 
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
+    <button id="addEntry">Add Entry</button>
+    <button id="generateBtn" onclick="generatePDF()">Generate PDF</button>
 
-      const leftMargin = 20;
-      const barPadding = 10;
-      const valuePadding = 8;
-      const barSpacing = 10;
-      const topMargin = 80;
-      const bottomMargin = 60;
-      const maxBarHeight = 36;
+    <script>
+      const presetNames = [
+        "Abigail",
+        "Debbie",
+        "Diane",
+        "Elizabeth",
+        "George",
+        "Harvey",
+        "Jacqueline",
+        "Jessica",
+        "Joshua",
+        "Laura",
+        "Nathan",
+        "Pauline",
+        "Samantha",
+        "Wendi",
+      ].sort();
 
-      const chartHeight = pageHeight - topMargin - bottomMargin - (zeroes.length ? 60 : 0);
-      const barHeight = Math.min(
-        maxBarHeight,
-        Math.floor((chartHeight - (entries.length - 1) * barSpacing) / entries.length)
-      );
+      const entryGrid = document.getElementById("entryGrid");
+      const customTitleInput = document.getElementById("customTitle");
+      const barColorInput = document.getElementById("barColor");
+      const barPatternSelect = document.getElementById("barPattern");
+      document
+        .querySelectorAll('input[name="titleOption"]')
+        .forEach((radio) => {
+          radio.addEventListener("change", () => {
+            customTitleInput.disabled =
+              document.querySelector('input[name="titleOption"]:checked')
+                .value !== "custom";
+          });
+        });
 
-      // Determine font sizes and dynamic widths so everything fits on an A4 page
-      let nameFontSize = Math.max(12, Math.min(20, barHeight * 0.6));
-      let valueFontSize = Math.max(14, Math.min(24, barHeight * 0.65));
+      function createEntry(name = "New Name", isCustom = false) {
+        const div = document.createElement("div");
+        div.className = "entry";
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(valueFontSize);
-      const maxValueWidth = Math.max(...entries.map(e => doc.getTextWidth(String(e.value))));
-      const rightMargin = maxValueWidth + 20;
-      const availableWidth = pageWidth - leftMargin - rightMargin;
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.value = name;
+        nameInput.readOnly = !isCustom;
+        nameInput.className = "name";
 
-      doc.setFontSize(nameFontSize);
-      let maxNameWidth = Math.max(...entries.map(e => doc.getTextWidth(e.name)));
-      while (maxNameWidth + barPadding > availableWidth) {
-        nameFontSize *= 0.9;
-        doc.setFontSize(nameFontSize);
-        maxNameWidth = Math.max(...entries.map(e => doc.getTextWidth(e.name)));
+        const valueInput = document.createElement("input");
+        valueInput.type = "number";
+        valueInput.value = 0;
+        valueInput.min = 0;
+        valueInput.inputMode = "numeric";
+        valueInput.pattern = "[0-9]*";
+        valueInput.className = "value";
+
+        div.append(nameInput, valueInput);
+        entryGrid.appendChild(div);
       }
 
-      const labelWidth = maxNameWidth + barPadding;
+      presetNames.forEach((name) => createEntry(name));
+      for (let i = 0; i < 5; i++) createEntry("New Name", true);
+      document
+        .getElementById("addEntry")
+        .addEventListener("click", () => createEntry("New Name", true));
 
-      const chartStartX = leftMargin + labelWidth;
-      const barMaxWidth = availableWidth - labelWidth;
+      function formatDate(d) {
+        if (!d) return "";
+        const date = new Date(d);
+        return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
+      }
 
-      // Title
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(26);
-      doc.text(title, pageWidth / 2, 40, { align: 'center' });
+      function hexToRgb(hex) {
+        const value = hex.replace("#", "");
+        const bigint = parseInt(value, 16);
+        return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+      }
 
-      // Subtitle
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(14);
-      doc.text(subtitle, pageWidth / 2, 62, { align: 'center' });
+      async function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+          orientation: "landscape",
+          unit: "pt",
+          format: "a4",
+        });
 
-      let y = topMargin;
-      entries.forEach(entry => {
-        const barLength = (entry.value / maxValue) * barMaxWidth;
-        const yMiddle = y + barHeight / 2 + 5;
+        const entries = [],
+          zeroes = [];
+        document.querySelectorAll(".entry").forEach((div) => {
+          const name = div.querySelector(".name").value.trim();
+          const value = parseInt(div.querySelector(".value").value);
+          const isDefault = name === "New Name";
 
-        // Name
-        doc.setFontSize(nameFontSize);
-        doc.setFont('helvetica', 'bold');
-        doc.text(entry.name, chartStartX - barPadding, yMiddle, { align: 'right' });
-
-        // Bar
-        const [r, g, b] = hexToRgb(barColor);
-        doc.setFillColor(r, g, b);
-        doc.rect(chartStartX, y, barLength, barHeight, 'F');
-        if (barPattern === 'hatched') {
-          doc.setDrawColor(255, 255, 255);
-          doc.setLineWidth(1);
-          for (let hx = chartStartX + 6; hx < chartStartX + barLength; hx += 6) {
-            let xEnd = hx - barHeight;
-            let yEnd = y + barHeight;
-            if (xEnd < chartStartX) {
-              xEnd = chartStartX;
-              yEnd = y + (hx - chartStartX);
-            }
-            doc.line(hx, y, xEnd, yEnd);
+          if (name && !isNaN(value) && !isDefault) {
+            if (value === 0) zeroes.push(name);
+            else entries.push({ name, value });
           }
-          doc.setDrawColor(0, 0, 0);
+        });
+
+        entries.sort((a, b) => b.value - a.value);
+        const maxValue = Math.max(...entries.map((e) => e.value), 1);
+
+        const titleSelection = document.querySelector(
+          'input[name="titleOption"]:checked',
+        ).value;
+        let title;
+        if (titleSelection === "responses")
+          title = "Your Store, Your Say Responses";
+        else if (titleSelection === "sales") title = "Membership Card Sales";
+        else title = customTitleInput.value.trim() || "Custom Title";
+        const start = formatDate(document.getElementById("startDate").value);
+        const end = formatDate(document.getElementById("endDate").value);
+        const subtitle = start && end ? `from ${start} to ${end}` : "";
+        const barColor = barColorInput.value;
+        const barPattern = barPatternSelect.value;
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        const leftMargin = 20;
+        const barPadding = 10;
+        const valuePadding = 8;
+        const barSpacing = 10;
+        const topMargin = 80;
+        const bottomMargin = 60;
+        const maxBarHeight = 36;
+
+        const chartHeight =
+          pageHeight - topMargin - bottomMargin - (zeroes.length ? 60 : 0);
+        const barHeight = Math.min(
+          maxBarHeight,
+          Math.floor(
+            (chartHeight - (entries.length - 1) * barSpacing) / entries.length,
+          ),
+        );
+
+        // Determine font sizes and dynamic widths so everything fits on an A4 page
+        let nameFontSize = Math.max(12, Math.min(20, barHeight * 0.6));
+        let valueFontSize = Math.max(14, Math.min(24, barHeight * 0.65));
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(valueFontSize);
+        const maxValueWidth = Math.max(
+          ...entries.map((e) => doc.getTextWidth(String(e.value))),
+        );
+        const rightMargin = maxValueWidth + 20;
+        const availableWidth = pageWidth - leftMargin - rightMargin;
+
+        doc.setFontSize(nameFontSize);
+        let maxNameWidth = Math.max(
+          ...entries.map((e) => doc.getTextWidth(e.name)),
+        );
+        while (maxNameWidth + barPadding > availableWidth) {
+          nameFontSize *= 0.9;
+          doc.setFontSize(nameFontSize);
+          maxNameWidth = Math.max(
+            ...entries.map((e) => doc.getTextWidth(e.name)),
+          );
         }
 
-        // Value
-        doc.setFontSize(valueFontSize);
-        doc.setFont('helvetica', 'bold');
-        doc.text(String(entry.value), chartStartX + barLength + valuePadding, yMiddle);
+        const labelWidth = maxNameWidth + barPadding;
 
-        y += barHeight + barSpacing;
-      });
+        const chartStartX = leftMargin + labelWidth;
+        const barMaxWidth = availableWidth - labelWidth;
 
-      // Axis lines
-      const axisBottomY = topMargin + entries.length * (barHeight + barSpacing) - barSpacing;
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(1);
-      // Vertical axis
-      doc.line(chartStartX, topMargin, chartStartX, axisBottomY);
-      // Horizontal axis
-      doc.line(chartStartX, axisBottomY, chartStartX + barMaxWidth, axisBottomY);
+        // Title
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(26);
+        doc.text(title, pageWidth / 2, 40, { align: "center" });
 
-      // Horizontal axis labels (whole numbers)
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(nameFontSize);
-      const maxWhole = Math.ceil(maxValue);
-      const maxLabels = 10;
-      const step = maxWhole > maxLabels ? Math.ceil(maxWhole / maxLabels) : 1;
-      const labelY = axisBottomY + nameFontSize + 5;
-      for (let i = 0; i <= maxWhole; i += step) {
-        const xPos = chartStartX + (i / maxValue) * barMaxWidth;
-        doc.line(xPos, axisBottomY - 3, xPos, axisBottomY + 3);
-        doc.text(String(i), xPos, labelY, { align: 'center' });
+        // Subtitle
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(14);
+        doc.text(subtitle, pageWidth / 2, 62, { align: "center" });
+
+        let y = topMargin;
+        entries.forEach((entry) => {
+          const barLength = (entry.value / maxValue) * barMaxWidth;
+          const yMiddle = y + barHeight / 2 + 5;
+
+          // Name
+          doc.setFontSize(nameFontSize);
+          doc.setFont("helvetica", "bold");
+          doc.text(entry.name, chartStartX - barPadding, yMiddle, {
+            align: "right",
+          });
+
+          // Bar
+          const [r, g, b] = hexToRgb(barColor);
+          doc.setFillColor(r, g, b);
+          doc.rect(chartStartX, y, barLength, barHeight, "F");
+          if (barPattern === "hatched") {
+            doc.setDrawColor(255, 255, 255);
+            doc.setLineWidth(1);
+            for (
+              let hx = chartStartX + 6;
+              hx < chartStartX + barLength;
+              hx += 6
+            ) {
+              let xEnd = hx - barHeight;
+              let yEnd = y + barHeight;
+              if (xEnd < chartStartX) {
+                xEnd = chartStartX;
+                yEnd = y + (hx - chartStartX);
+              }
+              doc.line(hx, y, xEnd, yEnd);
+            }
+            doc.setDrawColor(0, 0, 0);
+          }
+
+          // Value
+          doc.setFontSize(valueFontSize);
+          doc.setFont("helvetica", "bold");
+          doc.text(
+            String(entry.value),
+            chartStartX + barLength + valuePadding,
+            yMiddle,
+          );
+
+          y += barHeight + barSpacing;
+        });
+
+        // Axis lines
+        const axisBottomY =
+          topMargin + entries.length * (barHeight + barSpacing) - barSpacing;
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(1);
+        // Vertical axis
+        doc.line(chartStartX, topMargin, chartStartX, axisBottomY);
+        // Horizontal axis
+        doc.line(
+          chartStartX,
+          axisBottomY,
+          chartStartX + barMaxWidth,
+          axisBottomY,
+        );
+
+        // Horizontal axis labels (whole numbers)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(nameFontSize);
+        const maxWhole = Math.ceil(maxValue);
+        const maxLabels = 10;
+        const step = maxWhole > maxLabels ? Math.ceil(maxWhole / maxLabels) : 1;
+        const labelY = axisBottomY + nameFontSize + 5;
+        for (let i = 0; i <= maxWhole; i += step) {
+          const xPos = chartStartX + (i / maxValue) * barMaxWidth;
+          doc.line(xPos, axisBottomY - 3, xPos, axisBottomY + 3);
+          doc.text(String(i), xPos, labelY, { align: "center" });
+        }
+
+        if (zeroes.length) {
+          y += 30;
+          let noSalesTitle;
+          if (title === "Your Store, Your Say Responses")
+            noSalesTitle = "No Your Store, Your Say Responses:";
+          else if (title === "Membership Card Sales")
+            noSalesTitle = "No Membership Card Sales:";
+          else noSalesTitle = `No ${title}:`;
+          const noSalesList = zeroes.sort().join(", ");
+          const wrapped = doc.splitTextToSize(noSalesList, pageWidth - 80);
+
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(11);
+          doc.text(noSalesTitle, pageWidth / 2, y, { align: "center" });
+          doc.text(wrapped, pageWidth / 2, y + 14, { align: "center" });
+        }
+
+        doc.save("performance_chart.pdf");
       }
-
-      if (zeroes.length) {
-        y += 30;
-        let noSalesTitle;
-        if (title === "Your Store, Your Say Responses") noSalesTitle = "No Your Store, Your Say Responses:";
-        else if (title === "Membership Card Sales") noSalesTitle = "No Membership Card Sales:";
-        else noSalesTitle = `No ${title}:`;
-        const noSalesList = zeroes.sort().join(", ");
-        const wrapped = doc.splitTextToSize(noSalesList, pageWidth - 80);
-
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(11);
-        doc.text(noSalesTitle, pageWidth / 2, y, { align: 'center' });
-        doc.text(wrapped, pageWidth / 2, y + 14, { align: 'center' });
-      }
-
-      doc.save("performance_chart.pdf");
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>
