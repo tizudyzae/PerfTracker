@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Membership Chart</title>
+  <title>Performance Tracker</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
@@ -19,6 +19,16 @@
       flex-wrap: wrap;
       gap: 1rem;
       align-items: center;
+    }
+    .title-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .title-options label {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
     }
     .entry-grid {
       display: grid;
@@ -44,15 +54,19 @@
   </style>
 </head>
 <body>
-  <h1>Membership Chart Generator</h1>
+  <h1>Performance Tracker</h1>
 
   <div class="date-toggle">
     <label>Start Date: <input type="date" id="startDate" /></label>
     <label>End Date: <input type="date" id="endDate" /></label>
-    <label>
-      <input type="checkbox" id="titleToggle" />
-      Use "Your Store, Your Say Responses"
-    </label>
+    <div class="title-options">
+      <label><input type="radio" name="titleOption" value="responses"> Your Store, Your Say Responses</label>
+      <label><input type="radio" name="titleOption" value="sales" checked> Membership Card Sales</label>
+      <label>
+        <input type="radio" name="titleOption" value="custom">
+        <input type="text" id="customTitle" placeholder="Custom Title" disabled />
+      </label>
+    </div>
   </div>
 
   <div class="entry-grid" id="entryGrid"></div>
@@ -67,6 +81,12 @@
     ].sort();
 
     const entryGrid = document.getElementById("entryGrid");
+    const customTitleInput = document.getElementById("customTitle");
+    document.querySelectorAll('input[name="titleOption"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        customTitleInput.disabled = document.querySelector('input[name="titleOption"]:checked').value !== 'custom';
+      });
+    });
 
     function createEntry(name = "New Name", isCustom = false) {
       const div = document.createElement("div");
@@ -90,7 +110,7 @@
     }
 
     presetNames.forEach(name => createEntry(name));
-    for (let i = 0; i < 5; i++) createEntry();
+    for (let i = 0; i < 5; i++) createEntry("New Name", true);
 
     function formatDate(d) {
       if (!d) return "";
@@ -118,8 +138,11 @@
       entries.sort((a, b) => b.value - a.value);
       const maxValue = Math.max(...entries.map(e => e.value), 1);
 
-      const titleToggle = document.getElementById("titleToggle").checked;
-      const title = titleToggle ? "Your Store, Your Say Responses" : "Membership Card Sales";
+      const titleSelection = document.querySelector('input[name="titleOption"]:checked').value;
+      let title;
+      if (titleSelection === 'responses') title = "Your Store, Your Say Responses";
+      else if (titleSelection === 'sales') title = "Membership Card Sales";
+      else title = customTitleInput.value.trim() || "Custom Title";
       const start = formatDate(document.getElementById("startDate").value);
       const end = formatDate(document.getElementById("endDate").value);
       const subtitle = start && end ? `From ${start} to ${end}` : "";
@@ -180,7 +203,10 @@
 
       if (zeroes.length) {
         y += 30;
-        const noSalesTitle = titleToggle ? "No Your Store, Your Say Responses:" : "No Membership Card Sales:";
+        let noSalesTitle;
+        if (title === "Your Store, Your Say Responses") noSalesTitle = "No Your Store, Your Say Responses:";
+        else if (title === "Membership Card Sales") noSalesTitle = "No Membership Card Sales:";
+        else noSalesTitle = `No ${title}:`;
         const noSalesList = zeroes.sort().join(", ");
         const wrapped = doc.splitTextToSize(noSalesList, pageWidth - 80);
 
@@ -190,7 +216,7 @@
         doc.text(wrapped, pageWidth / 2, y + 14, { align: 'center' });
       }
 
-      doc.save("membership_chart.pdf");
+      doc.save("performance_chart.pdf");
     }
   </script>
 </body>
