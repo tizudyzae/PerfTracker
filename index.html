@@ -149,9 +149,10 @@
 
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-      const leftMargin = 20;             // Reduced from 40
-      const labelWidth = 110;            // Reduced from 140
+
+      const leftMargin = 20;
       const barPadding = 10;
+      const valuePadding = 8;
       const barSpacing = 10;
       const topMargin = 80;
       const bottomMargin = 60;
@@ -163,6 +164,29 @@
         Math.floor((chartHeight - (entries.length - 1) * barSpacing) / entries.length)
       );
 
+      // Determine font sizes and dynamic widths so everything fits on an A4 page
+      let nameFontSize = Math.max(12, Math.min(20, barHeight * 0.6));
+      let valueFontSize = Math.max(14, Math.min(24, barHeight * 0.65));
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(valueFontSize);
+      const maxValueWidth = Math.max(...entries.map(e => doc.getTextWidth(String(e.value))));
+      const rightMargin = maxValueWidth + 20;
+      const availableWidth = pageWidth - leftMargin - rightMargin;
+
+      doc.setFontSize(nameFontSize);
+      let maxNameWidth = Math.max(...entries.map(e => doc.getTextWidth(e.name)));
+      while (maxNameWidth + barPadding > availableWidth) {
+        nameFontSize *= 0.9;
+        doc.setFontSize(nameFontSize);
+        maxNameWidth = Math.max(...entries.map(e => doc.getTextWidth(e.name)));
+      }
+
+      const labelWidth = maxNameWidth + barPadding;
+
+      const chartStartX = leftMargin + labelWidth;
+      const barMaxWidth = availableWidth - labelWidth;
+
       // Title
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(26);
@@ -173,16 +197,10 @@
       doc.setFontSize(14);
       doc.text(subtitle, pageWidth / 2, 62, { align: 'center' });
 
-      const chartStartX = leftMargin + labelWidth;
-      const barMaxWidth = pageWidth - chartStartX - 30;  // Slightly reduced
-
       let y = topMargin;
       entries.forEach(entry => {
         const barLength = (entry.value / maxValue) * barMaxWidth;
         const yMiddle = y + barHeight / 2 + 5;
-
-        const nameFontSize = Math.max(12, Math.min(20, barHeight * 0.6));
-        const valueFontSize = Math.max(14, Math.min(24, barHeight * 0.65));
 
         // Name
         doc.setFontSize(nameFontSize);
@@ -196,7 +214,7 @@
         // Value
         doc.setFontSize(valueFontSize);
         doc.setFont('helvetica', 'bold');
-        doc.text(String(entry.value), chartStartX + barLength + 8, yMiddle);
+        doc.text(String(entry.value), chartStartX + barLength + valuePadding, yMiddle);
 
         y += barHeight + barSpacing;
       });
