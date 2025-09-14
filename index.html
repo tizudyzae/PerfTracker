@@ -412,6 +412,20 @@
           start && end
             ? `${title} - ${start.replace(/\//g, "-")} to ${end.replace(/\//g, "-")}.pdf`
             : `${title}.pdf`;
+        // Footer with creation date
+        const today = new Date();
+        const formattedDate = today.toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Created on ${formattedDate}`, pageWidth - 20, pageHeight - 20, {
+          align: 'right',
+        });
+        doc.setTextColor(0, 0, 0);
         doc.save(fileName);
       }
     </script>
