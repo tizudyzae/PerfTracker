@@ -115,6 +115,9 @@
             <option value="hatched">Hatched</option>
           </select>
         </label>
+        <label
+          ><input type="checkbox" id="excludeManagement" /> Remove Management
+        </label>
       </div>
     </details>
 
@@ -125,14 +128,13 @@
 
     <script>
       const presetNames = [
-        "Abigail",
+        "Alireza",
         "Debbie",
         "Diane",
         "Elizabeth",
         "George",
         "Harvey",
         "Jacqueline",
-        "Jessica",
         "Joshua",
         "Laura",
         "Nathan",
@@ -141,10 +143,20 @@
         "Wendi",
       ].sort();
 
+      const managementNames = [
+        "Nathan",
+        "Samantha",
+        "Laura",
+        "Joshua",
+        "Elizabeth",
+      ];
+
       const entryGrid = document.getElementById("entryGrid");
       const customTitleInput = document.getElementById("customTitle");
       const barColorInput = document.getElementById("barColor");
       const barPatternSelect = document.getElementById("barPattern");
+      const excludeManagementCheckbox =
+        document.getElementById("excludeManagement");
       document
         .querySelectorAll('input[name="titleOption"]')
         .forEach((radio) => {
@@ -155,7 +167,7 @@
           });
         });
 
-      function createEntry(name = "New Name", isCustom = false) {
+      function createEntry(name = "", isCustom = false) {
         const div = document.createElement("div");
         div.className = "entry";
 
@@ -178,10 +190,18 @@
       }
 
       presetNames.forEach((name) => createEntry(name));
-      for (let i = 0; i < 5; i++) createEntry("New Name", true);
       document
         .getElementById("addEntry")
-        .addEventListener("click", () => createEntry("New Name", true));
+        .addEventListener("click", () => createEntry("", true));
+
+      excludeManagementCheckbox.addEventListener("change", () => {
+        document.querySelectorAll(".entry").forEach((div) => {
+          const name = div.querySelector(".name").value.trim();
+          if (managementNames.includes(name)) {
+            div.style.display = excludeManagementCheckbox.checked ? "none" : "";
+          }
+        });
+      });
 
       function formatDate(d) {
         if (!d) return "";
@@ -203,14 +223,18 @@
           format: "a4",
         });
 
+        const excludeManagement = excludeManagementCheckbox.checked;
         const entries = [],
           zeroes = [];
         document.querySelectorAll(".entry").forEach((div) => {
           const name = div.querySelector(".name").value.trim();
           const value = parseInt(div.querySelector(".value").value);
-          const isDefault = name === "New Name";
 
-          if (name && !isNaN(value) && !isDefault) {
+          if (
+            name &&
+            !isNaN(value) &&
+            !(excludeManagement && managementNames.includes(name))
+          ) {
             if (value === 0) zeroes.push(name);
             else entries.push({ name, value });
           }
@@ -384,7 +408,11 @@
           doc.text(wrapped, pageWidth / 2, y + 14, { align: "center" });
         }
 
-        doc.save("performance_chart.pdf");
+        const fileName =
+          start && end
+            ? `${title} - ${start.replace(/\//g, "-")} to ${end.replace(/\//g, "-")}.pdf`
+            : `${title}.pdf`;
+        doc.save(fileName);
       }
     </script>
   </body>
