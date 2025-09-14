@@ -89,7 +89,7 @@
         <div class="title-options">
           <label
             ><input type="radio" name="titleOption" value="responses" /> Your
-            Store, Your Say Responses</label
+            Store, Your Say Mentions</label
           >
           <label
             ><input type="radio" name="titleOption" value="sales" checked />
@@ -248,7 +248,7 @@
         ).value;
         let title;
         if (titleSelection === "responses")
-          title = "Your Store, Your Say Responses";
+          title = "Your Store, Your Say Mentions";
         else if (titleSelection === "sales") title = "Membership Card Sales";
         else title = customTitleInput.value.trim() || "Custom Title";
         const start = formatDate(document.getElementById("startDate").value);
@@ -394,8 +394,8 @@
         if (zeroes.length) {
           y += 30;
           let noSalesTitle;
-          if (title === "Your Store, Your Say Responses")
-            noSalesTitle = "No Your Store, Your Say Responses:";
+          if (title === "Your Store, Your Say Mentions")
+            noSalesTitle = "No Your Store, Your Say Mentions:";
           else if (title === "Membership Card Sales")
             noSalesTitle = "No Membership Card Sales:";
           else noSalesTitle = `No ${title}:`;
