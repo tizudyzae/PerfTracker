@@ -235,8 +235,14 @@
         if (barPattern === 'hatched') {
           doc.setDrawColor(255, 255, 255);
           doc.setLineWidth(1);
-          for (let hx = chartStartX; hx < chartStartX + barLength; hx += 6) {
-            doc.line(hx, y, hx - barHeight, y + barHeight);
+          for (let hx = chartStartX + 6; hx < chartStartX + barLength; hx += 6) {
+            let xEnd = hx - barHeight;
+            let yEnd = y + barHeight;
+            if (xEnd < chartStartX) {
+              xEnd = chartStartX;
+              yEnd = y + (hx - chartStartX);
+            }
+            doc.line(hx, y, xEnd, yEnd);
           }
           doc.setDrawColor(0, 0, 0);
         }
