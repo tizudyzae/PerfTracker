@@ -219,6 +219,25 @@
         y += barHeight + barSpacing;
       });
 
+      // Axis lines
+      const axisBottomY = topMargin + entries.length * (barHeight + barSpacing) - barSpacing;
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
+      // Vertical axis
+      doc.line(chartStartX, topMargin, chartStartX, axisBottomY);
+      // Horizontal axis
+      doc.line(chartStartX, axisBottomY, chartStartX + barMaxWidth, axisBottomY);
+
+      // Horizontal axis labels (whole numbers)
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      const maxWhole = Math.ceil(maxValue);
+      for (let i = 0; i <= maxWhole; i++) {
+        const xPos = chartStartX + (i / maxValue) * barMaxWidth;
+        doc.line(xPos, axisBottomY - 3, xPos, axisBottomY + 3);
+        doc.text(String(i), xPos, axisBottomY + 15, { align: 'center' });
+      }
+
       if (zeroes.length) {
         y += 30;
         let noSalesTitle;
