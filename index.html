@@ -67,6 +67,13 @@
         <input type="text" id="customTitle" placeholder="Custom Title" disabled />
       </label>
     </div>
+    <label>Bar Color: <input type="color" id="barColor" value="#3c78b4" /></label>
+    <label>Bar Pattern:
+      <select id="barPattern">
+        <option value="solid">Solid</option>
+        <option value="hatched">Hatched</option>
+      </select>
+    </label>
   </div>
 
   <div class="entry-grid" id="entryGrid"></div>
@@ -82,6 +89,8 @@
 
     const entryGrid = document.getElementById("entryGrid");
     const customTitleInput = document.getElementById("customTitle");
+    const barColorInput = document.getElementById("barColor");
+    const barPatternSelect = document.getElementById("barPattern");
     document.querySelectorAll('input[name="titleOption"]').forEach(radio => {
       radio.addEventListener('change', () => {
         customTitleInput.disabled = document.querySelector('input[name="titleOption"]:checked').value !== 'custom';
@@ -118,6 +127,16 @@
       return `${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()}`;
     }
 
+    function hexToRgb(hex) {
+      const value = hex.replace('#', '');
+      const bigint = parseInt(value, 16);
+      return [
+        (bigint >> 16) & 255,
+        (bigint >> 8) & 255,
+        bigint & 255
+      ];
+    }
+
     async function generatePDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
@@ -145,7 +164,9 @@
       else title = customTitleInput.value.trim() || "Custom Title";
       const start = formatDate(document.getElementById("startDate").value);
       const end = formatDate(document.getElementById("endDate").value);
-      const subtitle = start && end ? `From ${start} to ${end}` : "";
+      const subtitle = start && end ? `from ${start} to ${end}` : "";
+      const barColor = barColorInput.value;
+      const barPattern = barPatternSelect.value;
 
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -193,7 +214,7 @@
       doc.text(title, pageWidth / 2, 40, { align: 'center' });
 
       // Subtitle
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('helvetica', 'italic');
       doc.setFontSize(14);
       doc.text(subtitle, pageWidth / 2, 62, { align: 'center' });
 
@@ -208,8 +229,17 @@
         doc.text(entry.name, chartStartX - barPadding, yMiddle, { align: 'right' });
 
         // Bar
-        doc.setFillColor(60, 120, 180);
+        const [r, g, b] = hexToRgb(barColor);
+        doc.setFillColor(r, g, b);
         doc.rect(chartStartX, y, barLength, barHeight, 'F');
+        if (barPattern === 'hatched') {
+          doc.setDrawColor(255, 255, 255);
+          doc.setLineWidth(1);
+          for (let hx = chartStartX; hx < chartStartX + barLength; hx += 6) {
+            doc.line(hx, y, hx - barHeight, y + barHeight);
+          }
+          doc.setDrawColor(0, 0, 0);
+        }
 
         // Value
         doc.setFontSize(valueFontSize);
