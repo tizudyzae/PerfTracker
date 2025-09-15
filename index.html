@@ -215,6 +215,15 @@
         return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
       }
 
+      function loadImage(src) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
       async function generatePDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({
@@ -256,6 +265,12 @@
         const subtitle = start && end ? `from ${start} to ${end}` : "";
         const barColor = barColorInput.value;
         const barPattern = barPatternSelect.value;
+
+        let iconImg = null;
+        if (title === "Your Store, Your Say Mentions")
+          iconImg = await loadImage("trackericon1.png");
+        else if (title === "Membership Card Sales")
+          iconImg = await loadImage("trackericon2.png");
 
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
@@ -303,23 +318,43 @@
 
         const labelWidth = maxNameWidth + barPadding;
 
-        const chartStartX = leftMargin + labelWidth;
-        const barMaxWidth = availableWidth - labelWidth;
+          const chartStartX = leftMargin + labelWidth;
+          const barMaxWidth = availableWidth - labelWidth;
 
-        // Title
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(26);
-        doc.text(title, pageWidth / 2, 40, { align: "center" });
+          // Title
+          const titleFontSize = 26;
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(titleFontSize);
+          doc.text(title, pageWidth / 2, 40, { align: "center" });
 
-        // Subtitle
-        doc.setFont("helvetica", "italic");
-        doc.setFontSize(14);
-        doc.text(subtitle, pageWidth / 2, 62, { align: "center" });
+          // Subtitle
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(14);
+          doc.text(subtitle, pageWidth / 2, 62, { align: "center" });
 
-        let y = topMargin;
-        entries.forEach((entry) => {
-          const barLength = (entry.value / maxValue) * barMaxWidth;
-          const yMiddle = y + barHeight / 2 + 5;
+          // Icon
+          if (iconImg) {
+            const maxIconHeight = titleFontSize * 2;
+            let { width: iconWidth, height: iconHeight } = iconImg;
+            if (iconHeight > maxIconHeight) {
+              const scale = maxIconHeight / iconHeight;
+              iconHeight = maxIconHeight;
+              iconWidth *= scale;
+            }
+            doc.addImage(
+              iconImg,
+              "PNG",
+              pageWidth - iconWidth - 20,
+              20,
+              iconWidth,
+              iconHeight,
+            );
+          }
+
+          let y = topMargin;
+          entries.forEach((entry) => {
+            const barLength = (entry.value / maxValue) * barMaxWidth;
+            const yMiddle = y + barHeight / 2 + 5;
 
           // Name
           doc.setFontSize(nameFontSize);
